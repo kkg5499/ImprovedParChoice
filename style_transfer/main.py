@@ -7,6 +7,7 @@ import pickle
 import random
 import argparse
 from surrogate_classifier import surrogate_kwargs
+from paraphrases import all_ngrams
 from style_transformation import load_inflections, load_parser, load_ppdb, load_symspell, transform, CountVectorizer, TfidfVectorizer, LogisticRegressionSurrogate, MLPSurrogate
 
 # Don't print convergence warning when training clf
@@ -75,7 +76,17 @@ def main():
         symspell = load_symspell()
     if args.use_tgt and args.tgt_train:
         tgt_train = open(args.tgt_train, 'r').readlines()
-        print(tgt_train)
+        tgt_train = [s.strip() for s in tgt_train]
+        tgt_ngm_count = {}
+        for tgt in tgt_train:
+            all_ngm = all_ngrams(tgt.split())
+            for ngm in all_ngm:
+                if ngm not in tgt_ngm_count:
+                    tgt_ngm_count[ngm] = 0
+                tgt_ngm_count[ngm] += 1
+        count = sum(list(tgt_ngm_count.values()))
+        tgt_ngm_abund = {key: (value/count) for key, value in tgt_ngm_count.items()}
+        print(tgt_ngm_abund)
 
     print('Done!')
     

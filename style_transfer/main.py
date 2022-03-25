@@ -62,8 +62,11 @@ def main():
     
     if clf:
         src_labels = [1 for s in src] if args.flip_tgt else [0 for s in src]
+        tgt_labels = [0 for s in src] if args.flip_tgt else [1 for s in src]
         clf_acc = clf.accuracy(src, src_labels)
+        clf_acc2 = clf.accuracy(src, tgt_labels)
         print("Classifier accuracy with source before transformation: ", clf_acc)
+        print("Classifier accuracy with target before transformation: ", clf_acc2)
     
     print('\nLoading dependencies...', end=' ')
     parser = load_parser()
@@ -75,6 +78,7 @@ def main():
     if args.use_typos or args.spell_check:
         symspell = load_symspell()
     tgt_ngm_count = {}
+    tgt_ngm_abund = {}
     if args.use_tgt and args.tgt_train:
         tgt_train = open(args.tgt_train, 'r').readlines()
         tgt_train = [s.strip() for s in tgt_train]
@@ -99,7 +103,9 @@ def main():
     
     if clf:
         clf_acc = clf.accuracy(src_transformed, src_labels)
+        clf_acc2 = clf.accuracy(src_transformed, tgt_labels)
         print("Classifier accuracy with source after transformation: ", clf_acc)
+        print("Classifier accuracy with target after transformation: ", clf_acc2)
         
         if args.save_clf:
             save_clf_dir = os.path.dirname(args.save_clf)

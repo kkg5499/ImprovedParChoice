@@ -21,6 +21,7 @@ def main():
     arg_parser.add_argument('--tgt_train', help='Training corpus for tgt class', default='data/bob_train.txt')
     arg_parser.add_argument('--use_ppdb', action='store_true')
     arg_parser.add_argument('--use_wordnet', action='store_true')
+    arg_parser.add_argument('--use_tgt', action='store_true')
     arg_parser.add_argument('--use_typos', action='store_true')
     arg_parser.add_argument('--spell_check', action='store_true')
     arg_parser.add_argument('--clf', help='Pre-trained classifier', default='clf/LR_clf.pkl')
@@ -72,6 +73,9 @@ def main():
         infl = load_inflections()
     if args.use_typos or args.spell_check:
         symspell = load_symspell()
+    if args.use_tgt and args.tgt_train:
+        print(tgt_train)
+
     print('Done!')
     
     print('\nTransforming source:')

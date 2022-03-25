@@ -208,7 +208,7 @@ def trees(sent, parser):
     return tree_list
 
 # Map phrases in a sentence to paraphrases from PPDB
-def ppdb_matches(ppdb_dict, sent, parser, sent_parsed=None, sent_words=None, single_words=False, max_cand=100, ppdb_dict_key_len=3):
+def ppdb_matches(ppdb_dict, tgt_dict, sent, parser, sent_parsed=None, sent_words=None, single_words=False, max_cand=100, ppdb_dict_key_len=3, min_prob = 10e-12):
     pars = defaultdict(set)
     sent = sent.lower()
     if not sent_parsed:
@@ -218,7 +218,14 @@ def ppdb_matches(ppdb_dict, sent, parser, sent_parsed=None, sent_words=None, sin
     sent = ' '.join(sent_words)
     sent_trees = trees(sent_parsed, parser=parser)
     
-    for ngr in all_ngrams(sent_words):
+    ngrams = all_ngrams(sent_words)
+    if tgt_dict != {}:
+        probs = [tgt_dict[ngram] if ngram in tgt_dict else min_prob for ngram in ngrams]
+        sorted_ngrams = [ngram for _, ngram in sorted(zip(probs, ngrams))]
+    else:
+        sorted_ngrams = ngrams
+
+    for ngr in sorted_ngrams:
         start = sent.index(ngr)
         end = start + len(ngr)
         complement = sent[end:].strip()
@@ -298,14 +305,14 @@ def ppdb_matches(ppdb_dict, sent, parser, sent_parsed=None, sent_words=None, sin
     return pars
 
 # Product of possible PPDB-paraphrases (max_cand prevents combinatory explosion: random subset to truncate size)
-def ppdb_paraphrases(ppdb_dict, sent, parser, single_words=True, ppdb_dict_key_len=3, max_cand=1000):
+def ppdb_paraphrases(ppdb_dict, tgt_dict, sent, parser, single_words=True, ppdb_dict_key_len=3, max_cand=1000):
     if type(sent)==str:
         sent_parsed = parser(sent)
     else:
         sent_parsed = sent
     sent_words = [t.orth_.lower() for t in sent_parsed]
     sent = ' '.join(sent_words).strip()
-    pars = ppdb_matches(ppdb_dict=ppdb_dict, sent=sent, parser=parser, sent_parsed=sent_parsed, sent_words=sent_words, single_words=single_words, max_cand=max_cand, ppdb_dict_key_len=ppdb_dict_key_len)
+    pars = ppdb_matches(ppdb_dict=ppdb_dict, tgt_dict=tgt_dict, sent=sent, parser=parser, sent_parsed=sent_parsed, sent_words=sent_words, single_words=single_words, max_cand=max_cand, ppdb_dict_key_len=ppdb_dict_key_len)
 
     # Non-overlapping paraphrases based on position
     par_positions = {p:range(sent.index(p),sent.index(p)+len(p)) for p in pars}
@@ -635,7 +642,7 @@ def typo_candidates(sent, typo_dict, max_cand=100):
 # Combining all paraphrase functions
 # Order: simple (with modals) -> PPDB -> WN -> simple (without modals) -> typos
     
-def paraphrase_candidates(sents, parser, ppdb_dict, infl_dict, use_ppdb=True, use_wn=True, max_cand=1000, print_time=False):
+def paraphrase_candidates(sents, parser, ppdb_dict, tgt_dict, infl_dict, use_ppdb=True, use_wn=True, max_cand=1000, print_time=False):
     time1 = time.time()
     if type(sents)==str:
         sents = [sents]
@@ -647,7 +654,7 @@ def paraphrase_candidates(sents, parser, ppdb_dict, infl_dict, use_ppdb=True, us
         while len(sents_ppdb)<max_cand and idx_list:
             idx = random.choice(idx_list)
             rand_sent = sents[idx]
-            sents_ppdb += ppdb_paraphrases(ppdb_dict, rand_sent, parser=parser, max_cand=max_cand)
+            sents_ppdb += ppdb_paraphrases(ppdb_dict, tgt_dict, rand_sent, parser=parser, max_cand=max_cand)
             idx_list.remove(idx)
         sents = sents_ppdb
     

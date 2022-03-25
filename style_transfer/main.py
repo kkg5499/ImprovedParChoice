@@ -7,6 +7,7 @@ import pickle
 import random
 import argparse
 from surrogate_classifier import surrogate_kwargs
+from paraphrases import all_ngrams
 from style_transformation import load_inflections, load_parser, load_ppdb, load_symspell, transform, CountVectorizer, TfidfVectorizer, LogisticRegressionSurrogate, MLPSurrogate
 
 # Don't print convergence warning when training clf
@@ -21,6 +22,7 @@ def main():
     arg_parser.add_argument('--tgt_train', help='Training corpus for tgt class', default='data/bob_train.txt')
     arg_parser.add_argument('--use_ppdb', action='store_true')
     arg_parser.add_argument('--use_wordnet', action='store_true')
+    arg_parser.add_argument('--use_tgt', action='store_true')
     arg_parser.add_argument('--use_typos', action='store_true')
     arg_parser.add_argument('--spell_check', action='store_true')
     arg_parser.add_argument('--clf', help='Pre-trained classifier', default='clf/LR_clf.pkl')
@@ -60,8 +62,11 @@ def main():
     
     if clf:
         src_labels = [1 for s in src] if args.flip_tgt else [0 for s in src]
+        tgt_labels = [0 for s in src] if args.flip_tgt else [1 for s in src]
         clf_acc = clf.accuracy(src, src_labels)
+        clf_acc2 = clf.accuracy(src, tgt_labels)
         print("Classifier accuracy with source before transformation: ", clf_acc)
+        print("Classifier accuracy with target before transformation: ", clf_acc2)
     
     print('\nLoading dependencies...', end=' ')
     parser = load_parser()
@@ -72,11 +77,25 @@ def main():
         infl = load_inflections()
     if args.use_typos or args.spell_check:
         symspell = load_symspell()
+    tgt_ngm_count = {}
+    tgt_ngm_abund = {}
+    if args.use_tgt and args.tgt_train:
+        tgt_train = open(args.tgt_train, 'r').readlines()
+        tgt_train = [s.strip() for s in tgt_train]
+        for tgt in tgt_train:
+            all_ngm = all_ngrams(tgt.split())
+            for ngm in all_ngm:
+                if ngm not in tgt_ngm_count:
+                    tgt_ngm_count[ngm] = 0
+                tgt_ngm_count[ngm] += 1
+        count = sum(list(tgt_ngm_count.values()))
+        tgt_ngm_abund = {key: (value/count) for key, value in tgt_ngm_count.items()}
+
     print('Done!')
     
     print('\nTransforming source:')
     
-    src_transformed = transform(src, parser=parser, ppdb_dict=ppdb, infl_dict=infl, symspell=symspell,
+    src_transformed = transform(src, parser=parser, ppdb_dict=ppdb, tgt_dict=tgt_ngm_abund, infl_dict=infl, symspell=symspell,
                                 use_ppdb=args.use_ppdb, use_wn=args.use_wordnet, use_typos=args.use_typos, spell_check=args.spell_check,
                                 max_len=50, max_cand=1000, max_loop = 1, max_edit_distance = 10, prob_threshold = 1,
                                 surrogate=clf, surrogate_corpus=surrogate_corpus, surrogate_corpus_labels=surrogate_corpus_labels,
@@ -84,7 +103,9 @@ def main():
     
     if clf:
         clf_acc = clf.accuracy(src_transformed, src_labels)
+        clf_acc2 = clf.accuracy(src_transformed, tgt_labels)
         print("Classifier accuracy with source after transformation: ", clf_acc)
+        print("Classifier accuracy with target after transformation: ", clf_acc2)
         
         if args.save_clf:
             save_clf_dir = os.path.dirname(args.save_clf)

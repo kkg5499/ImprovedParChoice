@@ -74,10 +74,10 @@ def main():
         infl = load_inflections()
     if args.use_typos or args.spell_check:
         symspell = load_symspell()
+    tgt_ngm_count = {}
     if args.use_tgt and args.tgt_train:
         tgt_train = open(args.tgt_train, 'r').readlines()
         tgt_train = [s.strip() for s in tgt_train]
-        tgt_ngm_count = {}
         for tgt in tgt_train:
             all_ngm = all_ngrams(tgt.split())
             for ngm in all_ngm:
@@ -86,13 +86,12 @@ def main():
                 tgt_ngm_count[ngm] += 1
         count = sum(list(tgt_ngm_count.values()))
         tgt_ngm_abund = {key: (value/count) for key, value in tgt_ngm_count.items()}
-        print(tgt_ngm_abund)
 
     print('Done!')
     
     print('\nTransforming source:')
     
-    src_transformed = transform(src, parser=parser, ppdb_dict=ppdb, infl_dict=infl, symspell=symspell,
+    src_transformed = transform(src, parser=parser, ppdb_dict=ppdb, tgt_dict=tgt_ngm_abund, infl_dict=infl, symspell=symspell,
                                 use_ppdb=args.use_ppdb, use_wn=args.use_wordnet, use_typos=args.use_typos, spell_check=args.spell_check,
                                 max_len=50, max_cand=1000, max_loop = 1, max_edit_distance = 10, prob_threshold = 1,
                                 surrogate=clf, surrogate_corpus=surrogate_corpus, surrogate_corpus_labels=surrogate_corpus_labels,

@@ -219,8 +219,11 @@ def ppdb_matches(ppdb_dict, tgt_dict, sent, parser, sent_parsed=None, sent_words
     sent_trees = trees(sent_parsed, parser=parser)
     
     ngrams = all_ngrams(sent_words)
-    probs = [tgt_dict[ngram] if ngram in tgt_dict else min_prob for ngram in ngrams]
-    sorted_ngrams = [ngram for _, ngram in sorted(zip(probs, ngrams))]
+    if tgt_dict != {}:
+        probs = [tgt_dict[ngram] if ngram in tgt_dict else min_prob for ngram in ngrams]
+        sorted_ngrams = [ngram for _, ngram in sorted(zip(probs, ngrams))]
+    else:
+        sorted_ngrams = ngrams
 
     for ngr in sorted_ngrams:
         start = sent.index(ngr)

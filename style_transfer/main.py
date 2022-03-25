@@ -74,6 +74,7 @@ def main():
     if args.use_typos or args.spell_check:
         symspell = load_symspell()
     if args.use_tgt and args.tgt_train:
+        tgt_train = open(args.tgt_train, 'r').readlines()
         print(tgt_train)
 
     print('Done!')

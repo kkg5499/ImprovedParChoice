@@ -1,5 +1,7 @@
 https://gitlab.com/ssg-research/mlsec/parchoice/-/tree/master/
 
+[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/googlecolab/colabtools/blob/master/notebooks/colab-github-demo.ipynb)
+
 # ParChoice
 
 This repository contains code for producing style transfer in text with four techniques described in:
